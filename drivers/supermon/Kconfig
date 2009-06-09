@@ -1,0 +1,10 @@
+#
+# Supermon proc driver config
+#
+
+menuconfig SUPERMON
+	tristate "Supermon proc driver"
+	---help---
+	  This driver allows you to use the supermon proc driver.
+	for info: http://supermon.sourceforge.net
+
