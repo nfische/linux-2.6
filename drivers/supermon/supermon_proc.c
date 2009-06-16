@@ -59,11 +59,7 @@ MODULE_LICENSE("GPL");
 static struct proc_dir_entry *proc_supermon;
 static struct proc_dir_entry *proc_supermon_info, *proc_supermon_value;
 extern void si_swapinfo(struct sysinfo *);
-unsigned long *vmstat_start(int *vminfo_size);
-extern unsigned long long xprt_transmit_number;
-extern unsigned long long xprt_transmit_total_bytes;
-
-
+unsigned long *vmstat_start(void);
 
 static struct supermon_info {
 	int ncpus;
@@ -99,68 +95,91 @@ static char *netfields[] = {
 #define TEXTS_FOR_ZONES(xx) TEXT_FOR_DMA(xx) TEXT_FOR_DMA32(xx) xx "_normal", \
                                         TEXT_FOR_HIGHMEM(xx) xx "_movable",
 
+
 static const char * const vmstat_text[] = {
-        /* Zoned VM counters */
-        "nr_free_pages",
-        "nr_inactive",
-        "nr_active",
-        "nr_anon_pages",
-        "nr_mapped",
-        "nr_file_pages",
-        "nr_dirty",
-        "nr_writeback",
-        "nr_slab_reclaimable",
-        "nr_slab_unreclaimable",
-        "nr_page_table_pages",
-        "nr_unstable",
-        "nr_bounce",
-        "nr_vmscan_write",
+/* Zoned VM counters */
+	"nr_free_pages",
+	"nr_inactive_anon",
+	"nr_active_anon",
+	"nr_inactive_file",
+	"nr_active_file",
+#ifdef CONFIG_UNEVICTABLE_LRU
+	"nr_unevictable",
+	"nr_mlock",
+#endif
+	"nr_anon_pages",
+	"nr_mapped",
+	"nr_file_pages",
+	"nr_dirty",
+	"nr_writeback",
+	"nr_slab_reclaimable",
+	"nr_slab_unreclaimable",
+	"nr_page_table_pages",
+	"nr_unstable",
+	"nr_bounce",
+	"nr_vmscan_write",
+	"nr_writeback_temp",
 
 #ifdef CONFIG_NUMA
-        "numa_hit",
-        "numa_miss",
-        "numa_foreign",
-        "numa_interleave",
-        "numa_local",
-        "numa_other",
+	"numa_hit",
+	"numa_miss",
+	"numa_foreign",
+	"numa_interleave",
+	"numa_local",
+	"numa_other",
 #endif
 
 #ifdef CONFIG_VM_EVENT_COUNTERS
-        "pgpgin",
-        "pgpgout",
-        "pswpin",
-        "pswpout",
+	"pgpgin",
+	"pgpgout",
+	"pswpin",
+	"pswpout",
 
-        TEXTS_FOR_ZONES("pgalloc")
+	TEXTS_FOR_ZONES("pgalloc")
 
-        "pgfree",
-        "pgactivate",
-        "pgdeactivate",
+	"pgfree",
+	"pgactivate",
+	"pgdeactivate",
 
-        "pgfault",
-        "pgmajfault",
+	"pgfault",
+	"pgmajfault",
 
-        TEXTS_FOR_ZONES("pgrefill")
-        TEXTS_FOR_ZONES("pgsteal")
-        TEXTS_FOR_ZONES("pgscan_kswapd")
-        TEXTS_FOR_ZONES("pgscan_direct")
+	TEXTS_FOR_ZONES("pgrefill")
+	TEXTS_FOR_ZONES("pgsteal")
+	TEXTS_FOR_ZONES("pgscan_kswapd")
+	TEXTS_FOR_ZONES("pgscan_direct")
 
-        "pginodesteal",
-        "slabs_scanned",
-        "kswapd_steal",
-        "kswapd_inodesteal",
-        "pageoutrun",
-        "allocstall",
+	"pginodesteal",
+	"slabs_scanned",
+	"kswapd_steal",
+	"kswapd_inodesteal",
+	"pageoutrun",
+	"allocstall",
 
-        "pgrotated",
+	"pgrotated",
+#ifdef CONFIG_HUGETLB_PAGE
+	"htlb_buddy_alloc_success",
+	"htlb_buddy_alloc_fail",
+#endif
+#ifdef CONFIG_UNEVICTABLE_LRU
+	"unevictable_pgs_culled",
+	"unevictable_pgs_scanned",
+	"unevictable_pgs_rescued",
+	"unevictable_pgs_mlocked",
+	"unevictable_pgs_munlocked",
+	"unevictable_pgs_cleared",
+	"unevictable_pgs_stranded",
+	"unevictable_pgs_mlockfreed",
+#endif
 #endif
 };
 
-unsigned long *vmstat_start(int *vminfo_size)
+
+unsigned long *vmstat_start(void)
 {
-        unsigned long *v;
-	#ifdef CONFIG_VM_EVENT_COUNTERS
-	        unsigned long *e;
+	unsigned long *v;
+#ifdef CONFIG_VM_EVENT_COUNTERS
+	unsigned long *e;
 	#endif
 	        int i;
 	
@@ -171,8 +190,6 @@ unsigned long *vmstat_start(int *vminfo_size)
 	        v = kmalloc(NR_VM_ZONE_STAT_ITEMS * sizeof(unsigned long),
 	                        GFP_KERNEL);
 	#endif
-//	        if (!v)
-//	                return ERR_PTR(-ENOMEM);
 	        for (i = 0; i < NR_VM_ZONE_STAT_ITEMS; i++)
 	                v[i] = global_page_state(i);
 	#ifdef CONFIG_VM_EVENT_COUNTERS
@@ -181,7 +198,6 @@ unsigned long *vmstat_start(int *vminfo_size)
 	        e[PGPGIN] /= 2;         /* sectors -> kbytes */
 	        e[PGPGOUT] /= 2;
 	#endif
-	*vminfo_size = NR_VM_ZONE_STAT_ITEMS * sizeof(unsigned long) + sizeof(struct vm_event_state);
 	return v;
 }
 
@@ -189,33 +205,23 @@ static int
 supermon_meta_info(struct supermon_info *info, struct seq_file *seq)
 {
 	int i, vmstat_size;
-	PRINTIT("(");
-	PRINTIT("(cpuinfo 'U cpu user nice system)");
-	PRINTIT("(time 'U timestamp jiffies)");
-	PRINTIT("(netinfo 'U ");
+	seq_printf(seq, "(");
+	seq_printf(seq, "(cpuinfo 'U cpu user nice system)");
+	seq_printf(seq, "(time 'U timestamp jiffies)");
+	seq_printf(seq, "(netinfo 'U ");
 	for (i = 0; i < sizeof(netfields) / sizeof(netfields[0]); i++) {
-		PRINTIT("%s ", netfields[i]);
+		seq_printf(seq, "%s ", netfields[i]);
 	}
-	PRINTIT(")"); // End netinfo
-#ifdef ON_CLUSTER
-	PRINTIT("(rdma 'U xprt_transmit_number xprt_transmit_total_bytes)");
-        {
-        PRINTIT(" (balance_dirty_pages nr_reclaimable bdi_nr_reclaimable nr_writeback bdi_nr_writeback background_thresh_dwrudis dirty_thresh_dwrudis bdi_thresh pages_written write_chunk) ");
+	seq_printf(seq, ")"); // End netinfo
+	seq_printf
+	    (seq, "(meminfo 'U pagesize totalram sharedram freeram bufferram totalhigh freehigh mem_unit)");
+	vmstat_size = ARRAY_SIZE(vmstat_text);
+	seq_printf(seq, "(vmstat 'U ");
+        for (i = 0; i < vmstat_size ; i++) {
+		seq_printf(seq, "%s ", vmstat_text[i]);
         }
-#endif
-	PRINTIT
-	    ("(meminfo 'U pagesize totalram sharedram freeram bufferram totalhigh freehigh mem_unit)");
-//      PRINTIT("(swapinfo 'U "
-//              "(pagesize %lu) (total used pagecache))", PAGE_SIZE);
-#if 0
-	vmstat_start(&vmstat_size);
-	PRINTIT("(vmstat 'U ");
-        for (i = 0; i < vmstat_size  / sizeof(unsigned long); i++) {
-		PRINTIT("%s ", vmstat_text[i]);
-        }
-	PRINTIT(")"); // End vmstat
-#endif
-	PRINTIT(")\n"); // End #
+	seq_printf(seq, ")"); // End vmstat
+	seq_printf(seq, ")\n"); // End #
 	return 0;
 }
 
@@ -241,12 +247,12 @@ struct file_operations proc_supermon_info_ops = {
 
 
 static int
-supermon_convert_net_value(struct supermon_info *info,
+supermon_net_values(struct supermon_info *info,
 			   struct seq_file *seq)
 {
 	struct net_device *dev;
 
-	PRINTIT("(netinfo ");
+	seq_printf(seq, "(netinfo ");
 	read_lock(&dev_base_lock);
 	for_each_netdev(&init_net, dev) {
 		struct net_device_stats *stats =
@@ -254,105 +260,87 @@ supermon_convert_net_value(struct supermon_info *info,
 		if (!stats)
 			continue;
 
-		PRINTIT("(%s ", dev->name);
-		PRINTIT(" %lu", stats->rx_bytes);
-		PRINTIT(" %lu", stats->rx_packets);
-		PRINTIT(" %lu", stats->rx_errors);
-		PRINTIT(" %lu",
+		seq_printf(seq, "(%s ", dev->name);
+		seq_printf(seq, " %lu", stats->rx_bytes);
+		seq_printf(seq, " %lu", stats->rx_packets);
+		seq_printf(seq, " %lu", stats->rx_errors);
+		seq_printf(seq, " %lu",
 			stats->rx_dropped + stats->rx_missed_errors);
-		PRINTIT(" %lu", stats->rx_fifo_errors);
-		PRINTIT(" %lu",
+		seq_printf(seq, " %lu", stats->rx_fifo_errors);
+		seq_printf(seq, " %lu",
 			stats->rx_length_errors +
 			stats->rx_over_errors +
 			stats->rx_crc_errors + stats->rx_frame_errors);
-		PRINTIT(" %lu", stats->rx_compressed);
-		PRINTIT(" %lu", stats->multicast);
-		PRINTIT(" %lu", stats->tx_bytes);
-		PRINTIT(" %lu", stats->tx_packets);
-		PRINTIT(" %lu", stats->tx_errors);
-		PRINTIT(" %lu", stats->tx_dropped);
-		PRINTIT(" %lu", stats->tx_fifo_errors);
-		PRINTIT(" %lu", stats->collisions);
-		PRINTIT(" %lu",
+		seq_printf(seq, " %lu", stats->rx_compressed);
+		seq_printf(seq, " %lu", stats->multicast);
+		seq_printf(seq, " %lu", stats->tx_bytes);
+		seq_printf(seq, " %lu", stats->tx_packets);
+		seq_printf(seq, " %lu", stats->tx_errors);
+		seq_printf(seq, " %lu", stats->tx_dropped);
+		seq_printf(seq, " %lu", stats->tx_fifo_errors);
+		seq_printf(seq, " %lu", stats->collisions);
+		seq_printf(seq, " %lu",
 			stats->tx_carrier_errors +
 			stats->tx_aborted_errors +
 			stats->tx_window_errors +
 			stats->tx_heartbeat_errors);
-		PRINTIT(" %lu", stats->tx_compressed);
-		PRINTIT(")"); // End netinfo
+		seq_printf(seq, " %lu", stats->tx_compressed);
+		seq_printf(seq, ")"); // End netinfo
 	}
-#ifdef ON_CLUSTER
-	PRINTIT("(rdma %llu %llu)", xprt_transmit_number, xprt_transmit_total_bytes);
-
-	read_unlock(&dev_base_lock);
-	// My patch
-        {
-        extern long nr_reclaimable, bdi_nr_reclaimable;
-        extern long nr_writeback, bdi_nr_writeback;
-        extern long background_thresh_dwrudis;
-        extern long dirty_thresh_dwrudis;
-        extern long bdi_thresh;
-        extern unsigned long pages_written;
-        extern unsigned long write_chunk;
-        PRINTIT(" (balance_dirty_pages %li %li %li %li %li %li %li %lu %lu) ", nr_reclaimable, bdi_nr_reclaimable, nr_writeback, bdi_nr_writeback, background_thresh_dwrudis, dirty_thresh_dwrudis, bdi_thresh, pages_written, write_chunk);
-        }
-	PRINTIT(")");
-#endif
-
 	return 0;
 
 }
 
 static int
-supermon_convert_value(struct supermon_info *info, struct seq_file *seq)
+supermon_values(struct supermon_info *info, struct seq_file *seq)
 {
 	int n, i, vmstat_size;
 	struct timeval now;
 	struct sysinfo meminfo;
 	unsigned long *vmstat_info = 0;
-	PRINTIT("(");
-	PRINTIT("(cpuinfo ");
+	seq_printf(seq, "(");
+	seq_printf(seq, "(cpuinfo ");
 	for_each_online_cpu(n) {
-		PRINTIT("%d ", n);
+		seq_printf(seq, "%d ", n);
 		for (i = 0; i < 3; i++) {
 			if (i == 0) {
-				PRINTIT(" %lld",
+				seq_printf(seq, " %lld",
 					kstat_cpu(n).cpustat.user);
 			} else if (i == 1) {
-				PRINTIT(" %lld",
+				seq_printf(seq, " %lld",
 					kstat_cpu(n).cpustat.nice);
 			} else {
-				PRINTIT(" %lld",
+				seq_printf(seq, " %lld",
 					kstat_cpu(n).cpustat.system);
 			}
 		}
 	}
-	PRINTIT(")"); // Close cpuinfo
+	seq_printf(seq, ")"); // Close cpuinfo
 	do_gettimeofday(&now);
-	PRINTIT("(time 0x%lx %lu)", now.tv_sec * 1000 + now.tv_usec / 1000, jiffies);
-	supermon_convert_net_value(info, seq);
+	seq_printf(seq, "(time 0x%lx %lu)", now.tv_sec * 1000 + now.tv_usec / 1000, jiffies);
+	supermon_net_values(info, seq);
 	si_meminfo(&meminfo);
-//      si_swapinfo(&meminfo);
-	PRINTIT
-	    ("(meminfo %lu %lu %lu %lu %lu %lu %lu %u) ", PAGE_SIZE, meminfo.totalram << 2,
+	seq_printf
+	    (seq, "(meminfo %lu %lu %lu %lu %lu %lu %lu %u))", PAGE_SIZE, meminfo.totalram << 2,
 	     meminfo.sharedram << 2, meminfo.freeram << 2,
 	     meminfo.bufferram << 2, meminfo.totalhigh << 2,
 	     meminfo.freehigh << 2, meminfo.mem_unit << 2);
-#if 0
-	vmstat_info = vmstat_start(&vmstat_size);
-	PRINTIT("(vmstat ");
-        for (i = 0; i < vmstat_size  / sizeof(vmstat_info[0]); i++) {
-		PRINTIT("%lu ", vmstat_info[i]);
+	vmstat_info = vmstat_start();
+	vmstat_size = ARRAY_SIZE(vmstat_text);
+	seq_printf(seq, "(vmstat ");
+        for (i = 0; i < vmstat_size; i++) {
+		seq_printf(seq, "%lu ", vmstat_info[i]);
         }
-	PRINTIT(")"); // End vmstat
-#endif
-	PRINTIT(")\n"); // End S
+	kfree(vmstat_info);
+	vmstat_info = NULL;
+	seq_printf(seq, ")"); // End vmstat
+	seq_printf(seq, ")\n"); // End S
 	return 0;
 }
 
 static int supermon_proc_value_seq_show(struct seq_file *seq, void *offset)
 {
-	supermon_convert_value(&info, seq);
+	supermon_values(&info, seq);
 	return 0;
 }
 
