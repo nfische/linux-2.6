@@ -167,7 +167,7 @@ supermon_meta_info(struct supermon_info *info, struct seq_file *seq)
 	for (i = 0; i < sizeof(netfields) / sizeof(netfields[0]); i++) {
 		seq_printf(seq, "%s ", netfields[i]);
 	}
-	seq_printf(seq, ")");	// End netinfo
+	seq_printf(seq, ")");	/* End netinfo */
 	seq_printf 
 	    (seq,
 	     "(meminfo 'U pagesize totalram sharedram freeram bufferram totalhigh freehigh mem_unit)");
@@ -176,8 +176,8 @@ supermon_meta_info(struct supermon_info *info, struct seq_file *seq)
 	for (i = 0; i < vmstat_size; i++) {
 		seq_printf(seq, "%s ", vmstat_text[i]);
 	}
-	seq_printf(seq, ")");	// End vmstat
-	seq_printf(seq, ")\n");	// End #
+	seq_printf(seq, ")");	/* End vmstat */
+	seq_printf(seq, ")\n");	/* End # */
 	return 0;
 }
 static int supermon_proc_info_seq_show(struct seq_file *seq, void *offset) 
@@ -230,7 +230,7 @@ supermon_net_values(struct supermon_info *info, struct seq_file *seq)
 			    stats->tx_window_errors +
 			    stats->tx_heartbeat_errors);
 		seq_printf(seq, " %lu", stats->tx_compressed);
-		seq_printf(seq, ")");	// End netinfo
+		seq_printf(seq, ")");	/* End netinfo */
 	}
 	return 0;
 }
@@ -258,7 +258,7 @@ supermon_values(struct supermon_info *info, struct seq_file *seq)
 			}
 		}
 	}
-	seq_printf(seq, ")");	// Close cpuinfo
+	seq_printf(seq, ")");	/* Close cpuinfo */
 	do_gettimeofday(&now);
 	seq_printf(seq, "(time 0x%lx %lu)",
 		    now.tv_sec * 1000 + now.tv_usec / 1000, jiffies);
@@ -278,8 +278,8 @@ supermon_values(struct supermon_info *info, struct seq_file *seq)
 	}
 	kfree(vmstat_info);
 	vmstat_info = NULL;
-	seq_printf(seq, ")");	// End vmstat
-	seq_printf(seq, ")\n");	// End S
+	seq_printf(seq, ")");	/* End vmstat */
+	seq_printf(seq, ")\n");	/* End S */
 	return 0;
 }
 static int supermon_proc_value_seq_show(struct seq_file *seq, void *offset) 
