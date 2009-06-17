@@ -1,4 +1,3 @@
-#EXTRA_CFLAGS=-DON_CLUSTER
 obj-m +=  supermon_proc.o
 
 export KROOT=/lib/modules/$(shell uname -r)/build

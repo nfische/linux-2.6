@@ -51,7 +51,7 @@ version available from LANL.
 #include <linux/seq_file.h>
 #include <linux/netdevice.h>
 #include "supermon_proc.h"
-    MODULE_AUTHOR("Li-Ta Lo <ollie@lanl.gov>");
+MODULE_AUTHOR("Li-Ta Lo <ollie@lanl.gov>");
 MODULE_DESCRIPTION("Supermon module for 2.6 kernel /proc");
 MODULE_LICENSE("GPL");
 static struct proc_dir_entry *proc_supermon;
