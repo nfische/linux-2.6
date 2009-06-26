@@ -1,14 +1,5 @@
-obj-m +=  supermon_proc.o
+#
+# Makefile for Supermon proc device driver
+#	
 
-export KROOT=/lib/modules/$(shell uname -r)/build
-
-allofit:   modules
-modules:
-	@$(MAKE)  -C $(KROOT) M=$(PWD) modules
-modules_install:
-	@$(MAKE)  -C $(KROOT) M=$(PWD) modules_install
-kernel_clean:
-	@$(MAKE)  -C $(KROOT) M=$(PWD) clean
-
-clean: kernel_clean
-	rm -rf   Module.symvers modules.order Module.markers
+obj-$(CONFIG_SUPERMON)		+= supermon_proc.o
