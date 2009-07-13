@@ -3,9 +3,9 @@
 	Copyright (C) 2006 Li-Ta Lo <ollie@lanl.gov>
 
 	This software may be used and distributed according to the terms of
-	the GNU General Public License (GPL), Version 2 incorporated herein by reference.
-	Drivers based on or derived from this code fall under the GPL and must
-	retain the authorship, copyright and license notice. 
+	the GNU General Public License (GPL), Version 2 incorporated herein by
+	reference.  Drivers based on or derived from this code fall under the
+	GPL and must retain the authorship, copyright and license notice.
 
 */
 /* ACL:license */
@@ -56,7 +56,6 @@ MODULE_DESCRIPTION("Supermon module for 2.6 kernel /proc");
 MODULE_LICENSE("GPL");
 static struct proc_dir_entry *proc_supermon;
 static struct proc_dir_entry *proc_supermon_info, *proc_supermon_value;
-extern void si_swapinfo(struct sysinfo *);
 unsigned long *vmstat_start(void);
 static struct supermon_info {
 	int ncpus;
@@ -71,21 +70,21 @@ static char *netfields[] =
 
 #ifdef CONFIG_ZONE_DMA
 #define TEXT_FOR_DMA(xx) xx "_dma",
-#else /*  */
+#else
 #define TEXT_FOR_DMA(xx)
-#endif /*  */
+#endif
 
 #ifdef CONFIG_ZONE_DMA32
 #define TEXT_FOR_DMA32(xx) xx "_dma32",
-#else /*  */
+#else
 #define TEXT_FOR_DMA32(xx)
-#endif /*  */
+#endif
 
 #ifdef CONFIG_HIGHMEM
 #define TEXT_FOR_HIGHMEM(xx) xx "_high",
-#else /*  */
+#else
 #define TEXT_FOR_HIGHMEM(xx)
-#endif /*  */
+#endif
 
 #define TEXTS_FOR_ZONES(xx) TEXT_FOR_DMA(xx) TEXT_FOR_DMA32(xx) xx "_normal", \
 TEXT_FOR_HIGHMEM(xx) xx "_movable",
@@ -162,9 +161,8 @@ static int supermon_meta_info(struct supermon_info *info, struct seq_file *seq)
 	seq_printf(seq, "(cpuinfo 'U cpu user nice system)");
 	seq_printf(seq, "(time 'U timestamp jiffies)");
 	seq_printf(seq, "(netinfo 'U ");
-	for (i = 0; i < sizeof(netfields) / sizeof(netfields[0]); i++) {
+	for (i = 0; i < sizeof(netfields) / sizeof(netfields[0]); i++)
 		seq_printf(seq, "%s ", netfields[i]);
-	}
 	seq_printf(seq, ")");	/* End netinfo */
 	seq_printf
 	    (seq,
@@ -172,9 +170,8 @@ static int supermon_meta_info(struct supermon_info *info, struct seq_file *seq)
 	     "bufferram totalhigh freehigh mem_unit)");
 	vmstat_size = ARRAY_SIZE(vmstat_text);
 	seq_printf(seq, "(vmstat 'U ");
-	for (i = 0; i < vmstat_size; i++) {
+	for (i = 0; i < vmstat_size; i++)
 		seq_printf(seq, "%s ", vmstat_text[i]);
-	}
 	seq_printf(seq, ")");	/* End vmstat */
 	seq_printf(seq, ")\n");	/* End # */
 	return 0;
@@ -188,9 +185,9 @@ static int supermon_proc_info_open_fs(struct inode *inode, struct file *file)
 {
 	return single_open(file, supermon_proc_info_seq_show, PDE(inode)->data);
 }
-struct file_operations proc_supermon_info_ops = {.open =
-	    supermon_proc_info_open_fs,.read = seq_read,.llseek =
-	    seq_lseek,.release = single_release,
+const struct file_operations proc_supermon_info_ops = {.open =
+	    supermon_proc_info_open_fs, .read = seq_read, .llseek =
+	    seq_lseek, .release = single_release
 };
 static int supermon_net_values(struct supermon_info *info, struct seq_file *seq)
 {
@@ -268,9 +265,8 @@ static int supermon_values(struct supermon_info *info, struct seq_file *seq)
 	vmstat_info = vmstat_start();
 	vmstat_size = ARRAY_SIZE(vmstat_text);
 	seq_printf(seq, "(vmstat ");
-	for (i = 0; i < vmstat_size; i++) {
+	for (i = 0; i < vmstat_size; i++)
 		seq_printf(seq, "%lu ", vmstat_info[i]);
-	}
 	kfree(vmstat_info);
 	vmstat_info = NULL;
 	seq_printf(seq, ")");	/* End vmstat */
@@ -287,9 +283,9 @@ static int supermon_proc_value_open_fs(struct inode *inode, struct file *file)
 	return single_open(file, supermon_proc_value_seq_show,
 			   PDE(inode)->data);
 }
-static struct file_operations proc_supermon_value_ops = {.open =
-	    supermon_proc_value_open_fs,.read = seq_read,.llseek =
-	    seq_lseek,.release = single_release,
+const static struct file_operations proc_supermon_value_ops = {.open =
+	    supermon_proc_value_open_fs, .read = seq_read, .llseek =
+	    seq_lseek, .release = single_release
 };
 static int __init supermon_proc_init(void)
 {
