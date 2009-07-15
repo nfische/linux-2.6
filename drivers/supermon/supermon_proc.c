@@ -89,41 +89,86 @@ static char *netfields[] =
 #define TEXTS_FOR_ZONES(xx) TEXT_FOR_DMA(xx) TEXT_FOR_DMA32(xx) xx "_normal", \
 TEXT_FOR_HIGHMEM(xx) xx "_movable",
 
-static const char *const vmstat_text[] = {
-/* Zoned VM counters */
-	"nr_free_pages", "nr_inactive_anon", "nr_active_anon",
-	"nr_inactive_file", "nr_active_file",
-#ifdef CONFIG_UNEVICTABLE_LRU
-	"nr_unevictable", "nr_mlock",
-#endif /*  */
-	"nr_anon_pages", "nr_mapped", "nr_file_pages", "nr_dirty",
-	"nr_writeback", "nr_slab_reclaimable", "nr_slab_unreclaimable",
-	"nr_page_table_pages", "nr_unstable", "nr_bounce",
-	"nr_vmscan_write", "nr_writeback_temp",
+static const char * const vmstat_text[] = {
+        /* Zoned VM counters */
+        "nr_free_pages",
+        "nr_inactive_anon",
+        "nr_active_anon",
+        "nr_inactive_file",
+        "nr_active_file",
+        "nr_unevictable",
+        "nr_mlock",
+        "nr_anon_pages",
+        "nr_mapped",
+        "nr_file_pages",
+        "nr_dirty",
+        "nr_writeback",
+        "nr_slab_reclaimable",
+        "nr_slab_unreclaimable",
+        "nr_page_table_pages",
+        "nr_unstable",
+        "nr_bounce",
+        "nr_vmscan_write",
+        "nr_writeback_temp",
+
 #ifdef CONFIG_NUMA
-	"numa_hit", "numa_miss", "numa_foreign", "numa_interleave",
-	"numa_local", "numa_other",
-#endif /*  */
+        "numa_hit",
+        "numa_miss",
+        "numa_foreign",
+        "numa_interleave",
+        "numa_local",
+        "numa_other",
+#endif
 
 #ifdef CONFIG_VM_EVENT_COUNTERS
-	"pgpgin", "pgpgout", "pswpin", "pswpout",
-	TEXTS_FOR_ZONES("pgalloc") "pgfree", "pgactivate",
-	"pgdeactivate", "pgfault", "pgmajfault",
-	TEXTS_FOR_ZONES("pgrefill") TEXTS_FOR_ZONES("pgsteal")
-	    TEXTS_FOR_ZONES("pgscan_kswapd") TEXTS_FOR_ZONES("pgscan_direct")
-	    "pginodesteal", "slabs_scanned", "kswapd_steal",
-	"kswapd_inodesteal", "pageoutrun", "allocstall", "pgrotated",
+        "pgpgin",
+        "pgpgout",
+        "pswpin",
+        "pswpout",
+
+        TEXTS_FOR_ZONES("pgalloc")
+
+        "pgfree",
+        "pgactivate",
+        "pgdeactivate",
+
+        "pgfault",
+        "pgmajfault",
+
+        TEXTS_FOR_ZONES("pgrefill")
+        TEXTS_FOR_ZONES("pgsteal")
+        TEXTS_FOR_ZONES("pgscan_kswapd")
+        TEXTS_FOR_ZONES("pgscan_direct")
+
+#ifdef CONFIG_NUMA
+        "zone_reclaim_failed",
+#endif
+        "pginodesteal",
+        "slabs_scanned",
+        "kswapd_steal",
+        "kswapd_inodesteal",
+        "pageoutrun",
+        "allocstall",
+
+        "pgrotated",
 #ifdef CONFIG_HUGETLB_PAGE
-	"htlb_buddy_alloc_success", "htlb_buddy_alloc_fail",
-#endif /*  */
-#ifdef CONFIG_UNEVICTABLE_LRU
-	"unevictable_pgs_culled", "unevictable_pgs_scanned",
-	"unevictable_pgs_rescued", "unevictable_pgs_mlocked",
-	"unevictable_pgs_munlocked", "unevictable_pgs_cleared",
-	"unevictable_pgs_stranded", "unevictable_pgs_mlockfreed",
-#endif /*  */
-#endif /*  */
+        "htlb_buddy_alloc_success",
+        "htlb_buddy_alloc_fail",
+#endif
+        "unevictable_pgs_culled",
+        "unevictable_pgs_scanned",
+        "unevictable_pgs_rescued",
+        "unevictable_pgs_mlocked",
+        "unevictable_pgs_munlocked",
+        "unevictable_pgs_cleared",
+        "unevictable_pgs_stranded",
+        "unevictable_pgs_mlockfreed",
+#endif
 };
+
+
+
+
 unsigned long *vmstat_start(void)
 {
 	unsigned long *v;
@@ -195,20 +240,21 @@ static int supermon_net_values(struct supermon_info *info, struct seq_file *seq)
 	seq_printf(seq, "(netinfo ");
 	read_lock(&dev_base_lock);
 	for_each_netdev(&init_net, dev) {
-		struct net_device_stats *stats =
-		    (dev->get_stats ? dev->get_stats(dev) : NULL);
+		struct net_device_stats *stats = &dev->stats;
+//		    (*dev->stats ? dev->stats : NULL);
 		if (!stats)
 			continue;
 		seq_printf(seq, "(%s ", dev->name);
 		seq_printf(seq, " %lu", stats->rx_bytes);
 		seq_printf(seq, " %lu", stats->rx_packets);
 		seq_printf(seq, " %lu", stats->rx_errors);
-		seq_printf(seq, " %lu",
-			   stats->rx_dropped + stats->rx_missed_errors);
+		seq_printf(seq, " %lu", stats->rx_dropped + 
+					stats->rx_missed_errors);
 		seq_printf(seq, " %lu", stats->rx_fifo_errors);
-		seq_printf(seq, " %lu",
-			   stats->rx_length_errors + stats->rx_over_errors +
-			   stats->rx_crc_errors + stats->rx_frame_errors);
+		seq_printf(seq, " %lu", stats->rx_length_errors + 
+					stats->rx_over_errors +
+					stats->rx_crc_errors + 
+					stats->rx_frame_errors);
 		seq_printf(seq, " %lu", stats->rx_compressed);
 		seq_printf(seq, " %lu", stats->multicast);
 		seq_printf(seq, " %lu", stats->tx_bytes);
@@ -218,13 +264,15 @@ static int supermon_net_values(struct supermon_info *info, struct seq_file *seq)
 		seq_printf(seq, " %lu", stats->tx_fifo_errors);
 		seq_printf(seq, " %lu", stats->collisions);
 		seq_printf(seq, " %lu",
-			   stats->tx_carrier_errors +
-			   stats->tx_aborted_errors +
-			   stats->tx_window_errors +
-			   stats->tx_heartbeat_errors);
+			stats->tx_carrier_errors +
+			stats->tx_aborted_errors +
+			stats->tx_window_errors +
+			stats->tx_heartbeat_errors);
 		seq_printf(seq, " %lu", stats->tx_compressed);
-		seq_printf(seq, ")");	/* End netinfo */
+		seq_printf(seq, ")");	/* End devinfo */
 	}
+	seq_printf(seq, ")");	/* End netinfo */
+	read_unlock(&dev_base_lock);
 	return 0;
 }
 static int supermon_values(struct supermon_info *info, struct seq_file *seq)
@@ -257,7 +305,7 @@ static int supermon_values(struct supermon_info *info, struct seq_file *seq)
 	supermon_net_values(info, seq);
 	si_meminfo(&meminfo);
 	seq_printf
-	    (seq, "(meminfo %lu %lu %lu %lu %lu %lu %lu %u))", PAGE_SIZE,
+	    (seq, "(meminfo %lu %lu %lu %lu %lu %lu %lu %u)", PAGE_SIZE,
 	     meminfo.totalram << 2, meminfo.sharedram << 2,
 	     meminfo.freeram << 2, meminfo.bufferram << 2,
 	     meminfo.totalhigh << 2, meminfo.freehigh << 2,
