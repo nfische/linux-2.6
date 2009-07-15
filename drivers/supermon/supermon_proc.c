@@ -241,7 +241,6 @@ static int supermon_net_values(struct supermon_info *info, struct seq_file *seq)
 	read_lock(&dev_base_lock);
 	for_each_netdev(&init_net, dev) {
 		struct net_device_stats *stats = &dev->stats;
-//		    (*dev->stats ? dev->stats : NULL);
 		if (!stats)
 			continue;
 		seq_printf(seq, "(%s ", dev->name);
