@@ -241,6 +241,7 @@ static int supermon_net_values(struct supermon_info *info, struct seq_file *seq)
 	read_lock(&dev_base_lock);
 	for_each_netdev(&init_net, dev) {
 		struct net_device_stats *stats = &dev->stats;
+//		    (*dev->stats ? dev->stats : NULL);
 		if (!stats)
 			continue;
 		seq_printf(seq, "(%s ", dev->name);
@@ -279,7 +280,7 @@ static int supermon_values(struct supermon_info *info, struct seq_file *seq)
 	int n, i, vmstat_size;
 	struct timeval now;
 	struct sysinfo meminfo;
-	unsigned long *vmstat_info = 0;
+	unsigned long *vmstat_info = NULL;
 	seq_printf(seq, "(");
 	seq_printf(seq, "(cpuinfo ");
 	for_each_online_cpu(n) {
