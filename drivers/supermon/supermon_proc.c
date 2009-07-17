@@ -49,23 +49,21 @@ version available from LANL.
 #include <linux/kernel_stat.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
-#include <linux/netdevice.h>
 #include "supermon_proc.h"
 MODULE_AUTHOR("Li-Ta Lo <ollie@lanl.gov>");
 MODULE_DESCRIPTION("Supermon module for 2.6 kernel /proc");
 MODULE_LICENSE("GPL");
 static struct proc_dir_entry *proc_supermon;
 static struct proc_dir_entry *proc_supermon_info, *proc_supermon_value;
-unsigned long *vmstat_start(void);
+static unsigned long *vmstat_start(void);
 static struct supermon_info {
 	int ncpus;
 	int nnetif;
 } info;
 static char *netfields[] =
-    { "name", "rxbytes", "rxpackets", "rxerrs", "rxdrop", "rxfifo", "rxframe",
+{ "name", "rxbytes", "rxpackets", "rxerrs", "rxdrop", "rxfifo", "rxframe",
 	"rxcompressed", "rxmulticast", "txbytes", "txpackets", "txerrs",
-	    "txdrop", "txfifo",
-	"txcolls", "txcarrier", "txcompressed"
+	"txdrop", "txfifo", "txcolls", "txcarrier", "txcompressed"
 };
 
 #ifdef CONFIG_ZONE_DMA
@@ -90,86 +88,83 @@ static char *netfields[] =
 TEXT_FOR_HIGHMEM(xx) xx "_movable",
 
 static const char * const vmstat_text[] = {
-        /* Zoned VM counters */
-        "nr_free_pages",
-        "nr_inactive_anon",
-        "nr_active_anon",
-        "nr_inactive_file",
-        "nr_active_file",
-        "nr_unevictable",
-        "nr_mlock",
-        "nr_anon_pages",
-        "nr_mapped",
-        "nr_file_pages",
-        "nr_dirty",
-        "nr_writeback",
-        "nr_slab_reclaimable",
-        "nr_slab_unreclaimable",
-        "nr_page_table_pages",
-        "nr_unstable",
-        "nr_bounce",
-        "nr_vmscan_write",
-        "nr_writeback_temp",
+	/* Zoned VM counters */
+	"nr_free_pages",
+	"nr_inactive_anon",
+	"nr_active_anon",
+	"nr_inactive_file",
+	"nr_active_file",
+	"nr_unevictable",
+	"nr_mlock",
+	"nr_anon_pages",
+	"nr_mapped",
+	"nr_file_pages",
+	"nr_dirty",
+	"nr_writeback",
+	"nr_slab_reclaimable",
+	"nr_slab_unreclaimable",
+	"nr_page_table_pages",
+	"nr_unstable",
+	"nr_bounce",
+	"nr_vmscan_write",
+	"nr_writeback_temp",
 
 #ifdef CONFIG_NUMA
-        "numa_hit",
-        "numa_miss",
-        "numa_foreign",
-        "numa_interleave",
-        "numa_local",
-        "numa_other",
+	"numa_hit",
+	"numa_miss",
+	"numa_foreign",
+	"numa_interleave",
+	"numa_local",
+	"numa_other",
 #endif
 
 #ifdef CONFIG_VM_EVENT_COUNTERS
-        "pgpgin",
-        "pgpgout",
-        "pswpin",
-        "pswpout",
+	"pgpgin",
+	"pgpgout",
+	"pswpin",
+	"pswpout",
 
-        TEXTS_FOR_ZONES("pgalloc")
+	TEXTS_FOR_ZONES("pgalloc")
 
-        "pgfree",
-        "pgactivate",
-        "pgdeactivate",
+	"pgfree",
+	"pgactivate",
+	"pgdeactivate",
 
-        "pgfault",
-        "pgmajfault",
+	"pgfault",
+	"pgmajfault",
 
-        TEXTS_FOR_ZONES("pgrefill")
-        TEXTS_FOR_ZONES("pgsteal")
-        TEXTS_FOR_ZONES("pgscan_kswapd")
-        TEXTS_FOR_ZONES("pgscan_direct")
+	TEXTS_FOR_ZONES("pgrefill")
+	TEXTS_FOR_ZONES("pgsteal")
+	TEXTS_FOR_ZONES("pgscan_kswapd")
+	TEXTS_FOR_ZONES("pgscan_direct")
 
 #ifdef CONFIG_NUMA
-        "zone_reclaim_failed",
+	"zone_reclaim_failed",
 #endif
-        "pginodesteal",
-        "slabs_scanned",
-        "kswapd_steal",
-        "kswapd_inodesteal",
-        "pageoutrun",
-        "allocstall",
+	"pginodesteal",
+	"slabs_scanned",
+	"kswapd_steal",
+	"kswapd_inodesteal",
+	"pageoutrun",
+	"allocstall",
 
-        "pgrotated",
+	"pgrotated",
 #ifdef CONFIG_HUGETLB_PAGE
-        "htlb_buddy_alloc_success",
-        "htlb_buddy_alloc_fail",
+	"htlb_buddy_alloc_success",
+	"htlb_buddy_alloc_fail",
 #endif
-        "unevictable_pgs_culled",
-        "unevictable_pgs_scanned",
-        "unevictable_pgs_rescued",
-        "unevictable_pgs_mlocked",
-        "unevictable_pgs_munlocked",
-        "unevictable_pgs_cleared",
-        "unevictable_pgs_stranded",
-        "unevictable_pgs_mlockfreed",
+	"unevictable_pgs_culled",
+	"unevictable_pgs_scanned",
+	"unevictable_pgs_rescued",
+	"unevictable_pgs_mlocked",
+	"unevictable_pgs_munlocked",
+	"unevictable_pgs_cleared",
+	"unevictable_pgs_stranded",
+	"unevictable_pgs_mlockfreed",
 #endif
 };
 
-
-
-
-unsigned long *vmstat_start(void)
+static unsigned long *vmstat_start(void)
 {
 	unsigned long *v;
 
@@ -181,10 +176,11 @@ unsigned long *vmstat_start(void)
 
 #ifdef CONFIG_VM_EVENT_COUNTERS
 	v = kmalloc(NR_VM_ZONE_STAT_ITEMS * sizeof(unsigned long)
-		    + sizeof(struct vm_event_state), GFP_KERNEL);
+			+ sizeof(struct vm_event_state), GFP_KERNEL);
 
 #else /*  */
-	v = kmalloc(NR_VM_ZONE_STAT_ITEMS * sizeof(unsigned long), GFP_KERNEL);
+	v = kmalloc(NR_VM_ZONE_STAT_ITEMS * sizeof(unsigned long),
+			GFP_KERNEL);
 
 #endif /*  */
 	for (i = 0; i < NR_VM_ZONE_STAT_ITEMS; i++)
@@ -199,41 +195,44 @@ unsigned long *vmstat_start(void)
 #endif /*  */
 	return v;
 }
+
 static int supermon_meta_info(struct supermon_info *info, struct seq_file *seq)
 {
 	int i, vmstat_size;
 	seq_printf(seq, "(");
 	seq_printf(seq, "(cpuinfo 'U cpu user nice system)");
 	seq_printf(seq, "(time 'U timestamp jiffies)");
-	seq_printf(seq, "(netinfo 'U ");
-	for (i = 0; i < sizeof(netfields) / sizeof(netfields[0]); i++)
-		seq_printf(seq, "%s ", netfields[i]);
+	seq_printf(seq, "(netinfo 'U");
+	for (i = 0; i < ARRAY_SIZE(netfields); i++)
+		seq_printf(seq, " %s", netfields[i]);
 	seq_printf(seq, ")");	/* End netinfo */
-	seq_printf
-	    (seq,
-	     "(meminfo 'U pagesize totalram sharedram freeram "
-	     "bufferram totalhigh freehigh mem_unit)");
+	seq_printf(seq,	"(meminfo 'U pagesize totalram sharedram freeram "
+			"bufferram totalhigh freehigh mem_unit)");
 	vmstat_size = ARRAY_SIZE(vmstat_text);
-	seq_printf(seq, "(vmstat 'U ");
+	seq_printf(seq, "(vmstat 'U");
 	for (i = 0; i < vmstat_size; i++)
-		seq_printf(seq, "%s ", vmstat_text[i]);
+		seq_printf(seq, " %s", vmstat_text[i]);
 	seq_printf(seq, ")");	/* End vmstat */
 	seq_printf(seq, ")\n");	/* End # */
 	return 0;
 }
+
 static int supermon_proc_info_seq_show(struct seq_file *seq, void *offset)
 {
 	supermon_meta_info(&info, seq);
 	return 0;
 }
+
 static int supermon_proc_info_open_fs(struct inode *inode, struct file *file)
 {
 	return single_open(file, supermon_proc_info_seq_show, PDE(inode)->data);
 }
-const struct file_operations proc_supermon_info_ops = {.open =
-	    supermon_proc_info_open_fs, .read = seq_read, .llseek =
-	    seq_lseek, .release = single_release
+
+static const struct file_operations proc_supermon_info_ops = {.open =
+	supermon_proc_info_open_fs, .read = seq_read, .llseek =
+	seq_lseek, .release = single_release
 };
+
 static int supermon_net_values(struct supermon_info *info, struct seq_file *seq)
 {
 	struct net_device *dev;
@@ -241,10 +240,9 @@ static int supermon_net_values(struct supermon_info *info, struct seq_file *seq)
 	read_lock(&dev_base_lock);
 	for_each_netdev(&init_net, dev) {
 		struct net_device_stats *stats = &dev->stats;
-//		    (*dev->stats ? dev->stats : NULL);
 		if (!stats)
 			continue;
-		seq_printf(seq, "(%s ", dev->name);
+		seq_printf(seq, "(%s", dev->name);
 		seq_printf(seq, " %lu", stats->rx_bytes);
 		seq_printf(seq, " %lu", stats->rx_packets);
 		seq_printf(seq, " %lu", stats->rx_errors);
@@ -263,11 +261,10 @@ static int supermon_net_values(struct supermon_info *info, struct seq_file *seq)
 		seq_printf(seq, " %lu", stats->tx_dropped);
 		seq_printf(seq, " %lu", stats->tx_fifo_errors);
 		seq_printf(seq, " %lu", stats->collisions);
-		seq_printf(seq, " %lu",
-			stats->tx_carrier_errors +
-			stats->tx_aborted_errors +
-			stats->tx_window_errors +
-			stats->tx_heartbeat_errors);
+		seq_printf(seq, " %lu",	stats->tx_carrier_errors +
+					stats->tx_aborted_errors +
+					stats->tx_window_errors +
+					stats->tx_heartbeat_errors);
 		seq_printf(seq, " %lu", stats->tx_compressed);
 		seq_printf(seq, ")");	/* End devinfo */
 	}
@@ -275,6 +272,7 @@ static int supermon_net_values(struct supermon_info *info, struct seq_file *seq)
 	read_unlock(&dev_base_lock);
 	return 0;
 }
+
 static int supermon_values(struct supermon_info *info, struct seq_file *seq)
 {
 	int n, i, vmstat_size;
@@ -284,69 +282,73 @@ static int supermon_values(struct supermon_info *info, struct seq_file *seq)
 	seq_printf(seq, "(");
 	seq_printf(seq, "(cpuinfo ");
 	for_each_online_cpu(n) {
-		seq_printf(seq, "%d ", n);
+		seq_printf(seq, "%d", n);
 		for (i = 0; i < 3; i++) {
 			if (i == 0) {
 				seq_printf(seq, " %lld",
-					   kstat_cpu(n).cpustat.user);
+					kstat_cpu(n).cpustat.user);
 			} else if (i == 1) {
 				seq_printf(seq, " %lld",
-					   kstat_cpu(n).cpustat.nice);
+					kstat_cpu(n).cpustat.nice);
 			} else {
 				seq_printf(seq, " %lld",
-					   kstat_cpu(n).cpustat.system);
+					kstat_cpu(n).cpustat.system);
 			}
 		}
 	}
 	seq_printf(seq, ")");	/* Close cpuinfo */
 	do_gettimeofday(&now);
 	seq_printf(seq, "(time 0x%lx %lu)",
-		   now.tv_sec * 1000 + now.tv_usec / 1000, jiffies);
+		now.tv_sec * 1000 + now.tv_usec / 1000, jiffies);
 	supermon_net_values(info, seq);
 	si_meminfo(&meminfo);
-	seq_printf
-	    (seq, "(meminfo %lu %lu %lu %lu %lu %lu %lu %u)", PAGE_SIZE,
-	     meminfo.totalram << 2, meminfo.sharedram << 2,
-	     meminfo.freeram << 2, meminfo.bufferram << 2,
-	     meminfo.totalhigh << 2, meminfo.freehigh << 2,
-	     meminfo.mem_unit << 2);
+	seq_printf(seq, "(meminfo %lu %lu %lu %lu %lu %lu %lu %u)", PAGE_SIZE,
+				meminfo.totalram << 2, meminfo.sharedram << 2,
+				meminfo.freeram << 2, meminfo.bufferram << 2,
+				meminfo.totalhigh << 2, meminfo.freehigh << 2,
+				meminfo.mem_unit << 2);
 	vmstat_info = vmstat_start();
 	vmstat_size = ARRAY_SIZE(vmstat_text);
-	seq_printf(seq, "(vmstat ");
+	seq_printf(seq, "(vmstat");
 	for (i = 0; i < vmstat_size; i++)
-		seq_printf(seq, "%lu ", vmstat_info[i]);
+		seq_printf(seq, " %lu", vmstat_info[i]);
 	kfree(vmstat_info);
 	vmstat_info = NULL;
 	seq_printf(seq, ")");	/* End vmstat */
 	seq_printf(seq, ")\n");	/* End S */
 	return 0;
 }
+
 static int supermon_proc_value_seq_show(struct seq_file *seq, void *offset)
 {
 	supermon_values(&info, seq);
 	return 0;
 }
+
 static int supermon_proc_value_open_fs(struct inode *inode, struct file *file)
 {
 	return single_open(file, supermon_proc_value_seq_show,
-			   PDE(inode)->data);
+			PDE(inode)->data);
 }
+
 const static struct file_operations proc_supermon_value_ops = {.open =
-	    supermon_proc_value_open_fs, .read = seq_read, .llseek =
-	    seq_lseek, .release = single_release
+	supermon_proc_value_open_fs, .read = seq_read, .llseek =
+	seq_lseek, .release = single_release
 };
+
 static int __init supermon_proc_init(void)
 {
 	proc_supermon =
-	    create_proc_entry("supermon", S_IFDIR | S_IRUGO | S_IXUGO, NULL);
+		create_proc_entry("supermon", S_IFDIR | S_IRUGO | S_IXUGO, NULL);
 	proc_supermon_info =
-	    create_proc_entry("#", S_IRUGO | S_IXUGO, proc_supermon);
+		create_proc_entry("#", S_IRUGO | S_IXUGO, proc_supermon);
 	proc_supermon_info->proc_fops = &proc_supermon_info_ops;
 	proc_supermon_value =
-	    create_proc_entry("S", S_IRUGO | S_IXUGO, proc_supermon);
+		create_proc_entry("S", S_IRUGO | S_IXUGO, proc_supermon);
 	proc_supermon_value->proc_fops = &proc_supermon_value_ops;
 	return 0;
 }
+
 static void __exit supermon_proc_exit(void)
 {
 	remove_proc_entry("S", proc_supermon);
