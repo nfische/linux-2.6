@@ -6,5 +6,19 @@ menuconfig SUPERMON
 	tristate "Supermon proc driver"
 	---help---
 	  This driver allows you to use the supermon proc driver.
-	  for info: http://supermon.sourceforge.net
 
+	  Supermon is a high-speed cluster monitoring system that
+	  emphasizes low lerturbation, high sampling rates, and an
+	  extensible data protocol and programming interface.  It has
+	  been shown to scale from the most basic single processor
+	  machines to large scale 1024-node (2048 processor) clusters.
+
+	  Supermon is an extensible set of tools for high speed, scalable
+	  cluster monitoring.  Node behavior can be monitored much faster
+	  than with other commonly used methods (e.q., rstatd).  In addition,
+	  Supermon uses a data protocol based on symbolic expressions
+	  (S-expressions) at all levels of Supermon, from individual nodes to
+	  entire clusters.  This contributes to Supermon's scalability and
+	  allows it to function in a heterogeneous environment.
+
+	  Supermon Homepage: http://supermon.sourceforge.net

@@ -1,4 +1,5 @@
 /*
+	Copyright (C) 2009 Noah Fischer <neecs@berkeley.edu>
 	Copyright (C) 1999-2008 Ronald G. Minnich <rminnich@gmail.com>
 	Copyright (C) 2006 Li-Ta Lo <ollie@lanl.gov>
 
@@ -50,7 +51,7 @@ version available from LANL.
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include "supermon_proc.h"
-MODULE_AUTHOR("Li-Ta Lo <ollie@lanl.gov>");
+MODULE_AUTHOR("Noah Fischer <neecs@berkeley.edu>");
 MODULE_DESCRIPTION("Supermon module for 2.6 kernel /proc");
 MODULE_LICENSE("GPL");
 static struct proc_dir_entry *proc_supermon;
@@ -176,11 +177,10 @@ static unsigned long *vmstat_start(void)
 
 #ifdef CONFIG_VM_EVENT_COUNTERS
 	v = kmalloc(NR_VM_ZONE_STAT_ITEMS * sizeof(unsigned long)
-			+ sizeof(struct vm_event_state), GFP_KERNEL);
+		+ sizeof(struct vm_event_state), GFP_KERNEL);
 
 #else /*  */
-	v = kmalloc(NR_VM_ZONE_STAT_ITEMS * sizeof(unsigned long),
-			GFP_KERNEL);
+	v = kmalloc(NR_VM_ZONE_STAT_ITEMS * sizeof(unsigned long), GFP_KERNEL);
 
 #endif /*  */
 	for (i = 0; i < NR_VM_ZONE_STAT_ITEMS; i++)
@@ -282,7 +282,7 @@ static int supermon_values(struct supermon_info *info, struct seq_file *seq)
 	seq_printf(seq, "(");
 	seq_printf(seq, "(cpuinfo ");
 	for_each_online_cpu(n) {
-		seq_printf(seq, "%d", n);
+		seq_printf(seq, "(%d", n);
 		for (i = 0; i < 3; i++) {
 			if (i == 0) {
 				seq_printf(seq, " %lld",
@@ -291,7 +291,7 @@ static int supermon_values(struct supermon_info *info, struct seq_file *seq)
 				seq_printf(seq, " %lld",
 					kstat_cpu(n).cpustat.nice);
 			} else {
-				seq_printf(seq, " %lld",
+				seq_printf(seq, " %lld)",
 					kstat_cpu(n).cpustat.system);
 			}
 		}
@@ -318,24 +318,20 @@ static int supermon_values(struct supermon_info *info, struct seq_file *seq)
 	seq_printf(seq, ")\n");	/* End S */
 	return 0;
 }
-
 static int supermon_proc_value_seq_show(struct seq_file *seq, void *offset)
 {
 	supermon_values(&info, seq);
 	return 0;
 }
-
 static int supermon_proc_value_open_fs(struct inode *inode, struct file *file)
 {
 	return single_open(file, supermon_proc_value_seq_show,
 			PDE(inode)->data);
 }
-
 const static struct file_operations proc_supermon_value_ops = {.open =
 	supermon_proc_value_open_fs, .read = seq_read, .llseek =
 	seq_lseek, .release = single_release
 };
-
 static int __init supermon_proc_init(void)
 {
 	proc_supermon =
@@ -348,7 +344,6 @@ static int __init supermon_proc_init(void)
 	proc_supermon_value->proc_fops = &proc_supermon_value_ops;
 	return 0;
 }
-
 static void __exit supermon_proc_exit(void)
 {
 	remove_proc_entry("S", proc_supermon);
